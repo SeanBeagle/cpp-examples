@@ -7,9 +7,9 @@
 std::mutex mtx;
 
 /** Callable function */
-void callableFunction(int id) {
+void callableFunction(int i) {
     mtx.lock();
-    std::cout << "Running callableFunction " << id << std::endl;
+    std::cout << i << ": Running callableFunction: threadID= " << std::this_thread::get_id() << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(2));
     mtx.unlock();
 }
@@ -19,18 +19,18 @@ class CallableClass {
   private:
     static int _index;
   public:
-    void operator()(int id) {
+    void operator()(int i) {
         mtx.lock();
-        std::cout << "Running callableClass " << id << std::endl;
+        std::cout << i << ": Running callableClass: threadID=" << std::this_thread::get_id() << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(2));
         mtx.unlock();
     }
 };
 
 /** Callable lambda */
-auto callableLambda = [](int id) {
+auto callableLambda = [](int i) {
     mtx.lock();
-    std::cout << "Running callableLambda " << id << std::endl;
+    std::cout << i << ": Running callableLambda : threadID= " << std::this_thread::get_id() << std::endl;
     mtx.unlock(); 
 };
 
@@ -39,6 +39,7 @@ int main()
     std::cout << "Begin main()" << std::endl;
     std::array<std::thread, 10> thread_pool;
     
+    // 
     for (size_t i = 0; i < thread_pool.size(); i++) {
         if (i % 2 == 0 || i == 0) {
             thread_pool[i] = std::thread(callableFunction, i);
@@ -46,19 +47,13 @@ int main()
             thread_pool[i] = std::thread(CallableClass(), i);
         }
     }
- 
+
+    // block current thread until threads in thread_pool finish execution 
     for (std::thread &t : thread_pool) {
         t.join();    
     }
 
 
-    // std::thread t1(callableFunction, 3);
-    // std::thread t2(CallableClass(), 4);
-    // std::thread t3(callableLambda, 5);
-
-    // t1.join();
-    // t2.join();
-    // t3.join();
 
     std::cout << "End main()" << std::endl;
    
